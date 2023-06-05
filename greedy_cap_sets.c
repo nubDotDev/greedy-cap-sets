@@ -218,7 +218,7 @@ void maximal_cap_set() {
     reinit();
     shuffle(ord, tn);
     while (left > 0) {
-        // Find card the eliminates the fewest new cards
+        // Find card that eliminates the fewest new cards
         best_count = INT_MAX;
         best_index = -1;
         for (i = 0; i < tn; i++) {
@@ -229,7 +229,8 @@ void maximal_cap_set() {
             }
         }
 
-        // Eliminate cards
+        // Eliminate cards that form a line with the card at best_index
+        // and some other card in the cap set so far
         elim(best_index);
         left--;
         for (i = 0; i < cap_set_len; i++) {
@@ -298,7 +299,7 @@ int main() {
     printf("Starting %d trials...\n", trials);
     start = clock();
     run_trials();
-    printf("Trials completed! (Time elapsed: %.5fs)\n", (double) (clock() - start) / CLOCKS_PER_SEC);
+    printf("Trials complete! (Time elapsed: %.5fs)\n", (double) (clock() - start) / CLOCKS_PER_SEC);
 
     printf("Smallest cap set found: %d\n", min_cap_set_len);
     printf("Largest cap set found: %d\n", max_cap_set_len);
