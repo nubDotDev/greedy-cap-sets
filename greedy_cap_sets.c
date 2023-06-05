@@ -86,7 +86,7 @@ int data_get_index(int k) {
     // Linear probing
     for (i = k % map_size; data_keys[i] != 0 && data_keys[i] != k; i = (i+1) % map_size) {
         if (i == (k - 1) % map_size) {
-            printf("Map overflow!");
+            printf("Map overflow!\n");
             return -1;
         }
     }
@@ -176,29 +176,16 @@ void reinit() {
     }
 }
 
-// Frees adjacency lists
-void shutdown() {
-    int i;
-    list_node* curr, * prev;
-
-    for (i = 0; i < tn; i++) {
-        curr = nodes[i].neighbors;
-        while (curr) {
-            prev = curr;
-            curr = curr->next;
-            free(prev);
-        }
-    }
-}
-
 // Eliminates a node and updates the in-degrees of its neighbors
 void elim(int index) {
-    list_node* curr = nodes[index].neighbors;
+    list_node* curr = nodes[index].neighbors, * prev;
     
     nodes[index].is_elim = true;
     while (curr) {
         nodes[curr->data].in_deg--;
+        prev = curr;
         curr = curr->next;
+        free(prev);
     }
 }
 
@@ -317,7 +304,5 @@ int main() {
     for (i = 0; i < map_size; i++)
         if (data_keys[i] != 0)
             fprintf(fptr, "%d: %d\n", data_keys[i], data_vals[i]);
-
     fclose(fptr);
-    shutdown();
 }
