@@ -60,6 +60,13 @@ typedef struct list_node_struct {
     struct list_node_struct* next;
 } list_node;
 
+// Double linked list node
+typedef struct dbl_list_node_struct {
+    int data;
+    struct dbl_list_node_struct* next;
+    struct dbl_list_node_struct* prev;
+} dbl_list_node;
+
 // Graph node that stores a card, an adjacency list, its in-degree, and if it has been eliminated
 typedef struct graph_node_struct {
     card c;
@@ -72,6 +79,7 @@ int setter[3][3] = {{0, 2, 1}, {2, 1, 0}, {1, 0, 2}};
 int known_max[7] = {1, 2, 4, 9, 20, 45, 112};
 
 graph_node nodes[tn];
+dbl_list_node graph_list[tn], * graph_head;
 int ord[tn];
 
 int cap_set[tn], cap_set_len;
@@ -147,6 +155,7 @@ void init() {
     while (!done) {
         for (j = 0; j < n; j++)
             nodes[i].c[j] = count[j];
+        graph_list[i].data = i;
         ord[i] = i;
         i++;
         
@@ -168,25 +177,37 @@ void init() {
 void reinit() {
     int i;
 
+    graph_head = graph_list;
     cap_set_len = 0;
+    
     for (i = 0; i < tn; i++) {
         nodes[i].is_elim = false;
         nodes[i].in_deg = 0;
         nodes[i].neighbors = NULL;
+
+        graph_list[i].prev = i == 0 ? NULL : graph_list + (i-1);
+        graph_list[i].next = i == tn-1 ? NULL : graph_list + (i+1);
     }
 }
 
 // Eliminates a node and updates the in-degrees of its neighbors
-void elim(int index) {
-    list_node* curr = nodes[index].neighbors, * prev;
+void elim(int i) {
+    list_node* curr = nodes[i].neighbors, * prev;
     
-    nodes[index].is_elim = true;
+    nodes[i].is_elim = true;
     while (curr) {
         nodes[curr->data].in_deg--;
         prev = curr;
         curr = curr->next;
         free(prev);
     }
+
+    if (graph_list[i].prev)
+        graph_list[i].prev->next = graph_list[i].next;
+    else
+        graph_head = graph_list[i].next;
+    if (graph_list[i].next)
+        graph_list[i].next->prev = graph_list[i].prev;
 }
 
 // Builds an edge between from and to
@@ -201,6 +222,7 @@ void add_neighbor(graph_node* from, int to_index) {
 
 void maximal_cap_set() {
     int i, o, best_count, best_index, to_elim, left = tn;
+    dbl_list_node* curr;
 
     reinit();
     shuffle(ord, tn);
@@ -229,10 +251,12 @@ void maximal_cap_set() {
         }
 
         // Update eliminators/adjacency
-        for (i = 0; i < tn; i++) {
-            to_elim = third(best_index, i);
+        curr = graph_head;
+        while (curr) {
+            to_elim = third(best_index, curr->data);
             if (!nodes[to_elim].is_elim)
-                add_neighbor(nodes + to_elim, i);
+                add_neighbor(nodes + to_elim, curr->data);
+            curr = curr->next;
         }
 
         cap_set[cap_set_len] = best_index;
