@@ -1,15 +1,16 @@
 /*
 A cap set is a subset of Z_3^n with no three elements in a line
 (or equivalently, an arithmetic progression).
+A cap set with k elements is complete if it is not a subset of a cap set with k+1 elements.
 This is a generalization of the popular card game SET.
 The first few maximum cap set sizes are known: 1, 2, 4, 9, 20, 45, 112.
 For the rest of the sequence, we have only a bound of b^n where 2.195 <= b <= 2.756.
 
-This program uses a randomized greedy algorithm to find maximal cap sets in n dimensions.
+This program uses a randomized greedy algorithm to find complete cap sets in n dimensions.
 From simple tests, this algorithm seems to have an expected cap set size of about 2.07^n,
 but I do not know why yet.
-There are also certain sizes that seem to never yield a maximal cap set (e.g. 19 when n=4).
-An investigation into what maximal sizes are possible is warranted.
+There are also certain sizes that seem to never yield a complete cap set (e.g. 19 when n=4).
+An investigation into what complete sizes are possible is warranted.
 The standard deviation of the set sizes is also surprisingly low.
 
 We define a card to be an element of Z_3^n, and say that card u eliminates card v if
@@ -177,7 +178,8 @@ void init() {
 void reinit() {
     int i;
 
-    graph_head = graph_list;
+    shuffle(ord, tn);
+    graph_head = graph_list + ord[0];
     cap_set_len = 0;
     
     for (i = 0; i < tn; i++) {
@@ -185,8 +187,8 @@ void reinit() {
         nodes[i].in_deg = 0;
         nodes[i].neighbors = NULL;
 
-        graph_list[i].prev = i == 0 ? NULL : graph_list + (i-1);
-        graph_list[i].next = i == tn-1 ? NULL : graph_list + (i+1);
+        graph_list[ord[i]].prev = i == 0 ? NULL : graph_list + (ord[i-1]);
+        graph_list[ord[i]].next = i == tn-1 ? NULL : graph_list + (ord[i+1]);
     }
 }
 
@@ -220,22 +222,23 @@ void add_neighbor(graph_node* from, int to_index) {
     nodes[to_index].in_deg++;
 }
 
-void maximal_cap_set() {
+void complete_cap_set() {
     int i, o, best_count, best_index, to_elim, left = tn;
     dbl_list_node* curr;
 
     reinit();
-    shuffle(ord, tn);
     while (left > 0) {
         // Find card that eliminates the fewest new cards
         best_count = INT_MAX;
         best_index = -1;
-        for (i = 0; i < tn; i++) {
-            o = ord[i];
-            if (!nodes[o].is_elim && nodes[o].in_deg < best_count) {
+        curr = graph_head;
+        while (curr) {
+            o = curr->data;
+            if (nodes[o].in_deg < best_count) {
                 best_count = nodes[o].in_deg;
                 best_index = o;
             }
+            curr = curr->next;
         }
 
         // Eliminate cards that form a line with the card at best_index
@@ -264,25 +267,6 @@ void maximal_cap_set() {
     }
 }
 
-void run_trials() {
-    int i;
-
-    max_cap_set_len = 0;
-    min_cap_set_len = INT_MAX;
-    for (i = 0; i < trials; i++) {
-        maximal_cap_set();
-        data_set(cap_set_len, data_get(cap_set_len) + 1);
-        if (cap_set_len > max_cap_set_len) {
-            memcpy(max_cap_set, cap_set, tn * sizeof(int));
-            max_cap_set_len = cap_set_len;
-        }
-        if (cap_set_len < min_cap_set_len) {
-            memcpy(min_cap_set, cap_set, tn * sizeof(int));
-            min_cap_set_len = cap_set_len;
-        }
-    }
-}
-
 void print_cap_set(int* cs, int csl) {
     int i, j;
 
@@ -296,21 +280,47 @@ void print_cap_set(int* cs, int csl) {
     printf("[Length %d]\n", csl);
 }
 
+void run_trials() {
+    int i, next = 0, inc = trials < 100 ? 1 : trials / 100;
+
+    max_cap_set_len = 0;
+    min_cap_set_len = INT_MAX;
+    for (i = 0; i < trials; i++) {
+        if (i >= next) {
+            printf("\r%d%% complete", 100 * i / trials);
+            next += inc;
+        }
+
+        complete_cap_set();
+        
+        data_set(cap_set_len, data_get(cap_set_len) + 1);
+        if (cap_set_len > max_cap_set_len) {
+            memcpy(max_cap_set, cap_set, tn * sizeof(int));
+            max_cap_set_len = cap_set_len;
+        }
+        if (cap_set_len < min_cap_set_len) {
+            memcpy(min_cap_set, cap_set, tn * sizeof(int));
+            min_cap_set_len = cap_set_len;
+        }
+    }
+    printf("\r100%% complete\n");
+}
+
 int main() {
     int i, sum = 0, max_occur = 0;
     char fname[100];
     FILE* fptr;
     clock_t start;
 
-    printf("===== Maximal Cap Set (n=%d) =====\n", n);
+    printf("===== Complete Cap Set (n=%d) =====\n", n);
 
     printf("Initializing...\n");
     init();
 
-    printf("Starting %d trials...\n", trials);
+    printf("Executing %d trials...\n", trials);
     start = clock();
     run_trials();
-    printf("Trials complete! (Time elapsed: %.5fs)\n", (double) (clock() - start) / CLOCKS_PER_SEC);
+    printf("Time elapsed: %.5fs\n", (double) (clock() - start) / CLOCKS_PER_SEC);
 
     printf("Smallest cap set found: %d\n", min_cap_set_len);
     printf("Largest cap set found: %d\n", max_cap_set_len);
