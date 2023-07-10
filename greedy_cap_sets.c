@@ -78,6 +78,7 @@ typedef struct graph_node_struct {
 
 int setter[3][3] = {{0, 2, 1}, {2, 1, 0}, {1, 0, 2}};
 int known_max[7] = {1, 2, 4, 9, 20, 45, 112};
+int max_4_cap[20] = {0, 2, 6, 8, 13, 19, 21, 23, 25, 31, 49, 55, 57, 59, 61, 67, 72, 74, 78, 80};
 
 graph_node nodes[tn];
 dbl_list_node graph_list[tn], * graph_head;
@@ -231,14 +232,12 @@ void complete_cap_set() {
         // Find card that eliminates the fewest new cards
         best_count = INT_MAX;
         best_index = -1;
-        curr = graph_head;
-        while (curr) {
+        for (curr = graph_head; curr; curr = curr->next) {
             o = curr->data;
             if (nodes[o].in_deg < best_count) {
                 best_count = nodes[o].in_deg;
                 best_index = o;
             }
-            curr = curr->next;
         }
 
         // Eliminate cards that form a line with the card at best_index
@@ -254,17 +253,48 @@ void complete_cap_set() {
         }
 
         // Update eliminators/adjacency
-        curr = graph_head;
-        while (curr) {
+        for (curr = graph_head; curr; curr = curr->next) {
             to_elim = third(best_index, curr->data);
             if (!nodes[to_elim].is_elim)
                 add_neighbor(nodes + to_elim, curr->data);
-            curr = curr->next;
         }
 
         cap_set[cap_set_len] = best_index;
         cap_set_len++;
     }
+}
+
+// TODO: Implement optimal pair-checking algorithm
+// Assumes cards are sorted in increasing order
+int count_lines(int* cards, int l) {
+    int i, j, k, third_index, res = 0;
+
+    for (i = 0; i < l-2; i++) {
+        for (j = i+1; j < l-1; j++) {
+            third_index = third(cards[i], cards[j]);
+            for (k = j+1; k < l; k++) {
+                if (cards[k] == third_index) {
+                    res++;
+                    break;
+                } else if (cards[k] > third_index) {
+                    break;
+                }
+            }
+        }
+    }
+    return res;
+}
+
+int count_lines_complement(int* cards, int l) {
+    int i, j = 0, comp[tn];
+
+    for (i = 0; i < tn; i++) {
+        if (j >= l || cards[j] != i)
+            comp[i-j] = i;
+        else
+            j++;
+    }
+    return count_lines(comp, tn - l);
 }
 
 void print_cap_set(int* cs, int csl) {
