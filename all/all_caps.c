@@ -62,11 +62,10 @@ void userlevelproc(
     int* lab, int* ptn, int level, int* orbits, statsblk* stats,
     int tv, int index, int tcellsize, int numcells, int childcount, int n
 ) {
-    if (numcells == n) {
+    if (numcells == n)
         grp_size = 1;
-    } else {
+    else
         grp_size *= index;
-    }
 }
 
 void invarproc(
@@ -80,8 +79,10 @@ void invarproc(
         invar[i] = 0;
         for (j = 1; j < ALPHA; j++)
             invar[i] += alpha[i][j] * j * j;
-        if (alpha[i][0])
+        if (in_cap[i])
             invar[i] *= -1;
+        // else if (elim[i])
+        //     invar[i] *= 2;
     }
     for (i = QN; i < MAXN; i++)
         invar[i] = 0;
@@ -255,6 +256,7 @@ void orderly(int lvl) {
             }
         }
 
+        // Check that alpha(rep) is maximal
         max_alpha = true;
         for (j = 0; j < lvl; j++) {
             if (!vec_geq(alpha[rep], alpha[cap[j]], ALPHA)) {
@@ -264,7 +266,7 @@ void orderly(int lvl) {
         }
         
         if (max_alpha) {
-            // Initialize labelling and coloring
+            // Initialize labeling and coloring
             for (j = QN; j < MAXN; j++)
                 lab[j] = j;
             for (j = QN; j < MAXN-1; j++)
@@ -348,36 +350,4 @@ int main() {
     all_caps();
     printf("\nTime elapsed: %.5fs\n\n", (double) (clock() - start) / CLOCKS_PER_SEC);
     print_data();
-
-    // int p[MAXN] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0};
-    // int lvl = 0;
-    // p[lvl] = 0;
-    // // int l[MAXN] = {2,1,0,3,6,5,4,8,7,17,15,16,12,13,14,10,11,9,19,18,20};
-    // int l[MAXN] = {2,1,0,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20};
-    // printf("%d\n", lvl);
-    // for (int i = 0; i < MAXN; i++) {
-    //     printf("%d ", l[i]);
-    // }
-    // printf("\n");
-    // densenauty(g, l, p, orbit[4], &options, &stats, MAXM, MAXN, canon);
-    // // densenauty(canon, l, p, orbit[4], &options, &stats, MAXM, MAXN, g);
-    // for (int i = 0; i < MAXN; i++) {
-    //     printf("%d ", orbit[4][i]);
-    // }
-    // printf("\n");
-    // for (int i = 0; i < MAXN; i++) {
-    //     printf("%d ", l[i]);
-    // }
-    // printf("\n");
-
-    // graph h[MAXN*MAXM];
-    // int l1[MAXN] = {0,1,2,3}, p1[MAXN] = {1,1,1,0}, o1[MAXN];
-    // int n = 4;
-    // int m = SETWORDSNEEDED(n);
-    // ADDONEEDGE(h, 0, 1, m);
-    // ADDONEEDGE(h, 1, 2, m);
-    // ADDONEEDGE(h, 2, 3, m);
-    // // ADDONEEDGE(h, 3, 0, m);
-    // densenauty(h, l1, p1, o1, &options, &stats, m, n, canon);
-
 }
