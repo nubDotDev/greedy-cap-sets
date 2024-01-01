@@ -28,14 +28,14 @@
 #endif
 
 #define QN1 (QN/Q)
-#define ALPHA min(QN1, MAX_DEPTH)
+#define ALPHA MIN(QN1, MAX_DEPTH)
 #define NORMALS ((QN-1)/2)  // This doesn't work for fields other than F_3
 #define HYPERPLANES (Q*NORMALS)
 #define MAXN (QN+HYPERPLANES)  // Size of point-hyperplane incidence graph
 
 #include "nauty.h"
 
-#define min(a,b) (((a) < (b)) ? (a) : (b))
+#define MIN(a,b) (((a) < (b)) ? (a) : (b))
 #define PMOD(x, n) ((x % n + n) % n)
 
 // Element of Z_Q^n
@@ -53,10 +53,10 @@ int lab[MAXN], ptn[MAXN], orbit[MAX_DEPTH][MAXN];
 DEFAULTOPTIONS_GRAPH(options);
 statsblk stats;
 
-long long cases[MAX_DEPTH], tots[MAX_DEPTH], comps[MAX_DEPTH];
+unsigned long long cases[MAX_DEPTH], tots[MAX_DEPTH], comps[MAX_DEPTH];
 
 // TODO implement biguint
-long long grp_size, glfqn_size;
+unsigned long long grp_size, glfqn_size;
 
 void userlevelproc(
     int* lab, int* ptn, int level, int* orbits, statsblk* stats,
@@ -146,9 +146,9 @@ void print_int_arr(int* arr, int n) {
 void print_data() {
     int i;
 
-    printf(" N   | Cap(s)          | Case(s) | Complete\n");
+    printf(" N   | Cap(s)               | Case(s)      | Complete    \n");
     for (i = 0; i < MAX_DEPTH; i++)
-        printf(" %3d | %15lld | %7lld | %8lld\n", i, tots[i], cases[i], comps[i]);
+        printf(" %3d | %20llu | %12llu | %12llu\n", i, tots[i], cases[i], comps[i]);
 }
 
 void init() {
@@ -289,7 +289,10 @@ void orderly(int lvl) {
 
             // Check if rep is in theta(X + rep)
             for (j = 0; j < QN; j++) {
+                // If lab[j] is the point in the cap with the least canonical label of those with maximal alpha,
+                // then lab[j] is a representative of theta(X + rep) and we break regardless
                 if (in_cap[lab[j]] && vec_eq(alpha[rep], alpha[lab[j]], ALPHA)) {
+                    // If rep is in the same orbit as lab[j]
                     if (orbit[lvl+1][lab[j]] == orbit[lvl+1][rep]) {
                         printf("%9d ", ++itrs);
                         for (k = 0; k < lvl; k++)
@@ -310,7 +313,7 @@ void orderly(int lvl) {
                         orderly(lvl + 1);
                         
                         // Uneliminate cards
-                        for (j = 0; unelim[j]; j++)
+                        for (j = 0; j < l; j++)
                             elim[unelim[j]] = 0;
                     }
                     break;
